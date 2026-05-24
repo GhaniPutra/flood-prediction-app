@@ -10,56 +10,235 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .form-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .form-section h4 {
+            margin-top: 0;
+            color: #007bff;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .form-group input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+        .range-value {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .button-group button {
+            flex: 1;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+    </style>
 </head>
 <body>
     <div class="header">
         <h1>Sistem Informasi Geografis Prediksi Kerawanan Banjir DIY</h1>
-        <p>Berbasis Spatial Autoregressive (SAR)</p>
+        <p>Berbasis Machine Learning - Random Forest Regressor</p>
     </div>
     
     <div class="container">
         <div class="sidebar">
             <h3>Parameter Prediksi</h3>
             
-            <div class="form-group">
-                <label for="curah_hujan">Curah Hujan (mm/hari)</label>
-                <input type="number" id="curah_hujan" placeholder="Misal: 150">
+            <!-- Cuaca & Iklim -->
+            <div class="form-section">
+                <h4>🌧️ Cuaca & Iklim</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="MonsoonIntensity">Intensitas Monsun (1-10)</label>
+                        <input type="range" id="MonsoonIntensity" min="1" max="10" value="5">
+                        <div class="range-value" id="MonsoonIntensity_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ClimateChange">Perubahan Iklim (1-10)</label>
+                        <input type="range" id="ClimateChange" min="1" max="10" value="5">
+                        <div class="range-value" id="ClimateChange_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topografi & Drainase -->
+            <div class="form-section">
+                <h4>🏔️ Topografi & Drainase</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="TopographyDrainage">Drainase Topografi (1-10)</label>
+                        <input type="range" id="TopographyDrainage" min="1" max="10" value="5">
+                        <div class="range-value" id="TopographyDrainage_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="RiverManagement">Manajemen Sungai (1-10)</label>
+                        <input type="range" id="RiverManagement" min="1" max="10" value="5">
+                        <div class="range-value" id="RiverManagement_val">5</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="DrainageSystems">Sistem Drainase (1-10)</label>
+                        <input type="range" id="DrainageSystems" min="1" max="10" value="5">
+                        <div class="range-value" id="DrainageSystems_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Penggunaan Lahan -->
+            <div class="form-section">
+                <h4>🌲 Penggunaan Lahan</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="Deforestation">Deforestasi (1-10)</label>
+                        <input type="range" id="Deforestation" min="1" max="10" value="5">
+                        <div class="range-value" id="Deforestation_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="Urbanization">Urbanisasi (1-10)</label>
+                        <input type="range" id="Urbanization" min="1" max="10" value="5">
+                        <div class="range-value" id="Urbanization_val">5</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="AgriculturalPractices">Praktik Pertanian (1-10)</label>
+                        <input type="range" id="AgriculturalPractices" min="1" max="10" value="5">
+                        <div class="range-value" id="AgriculturalPractices_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="WetlandLoss">Hilangnya Lahan Basah (1-10)</label>
+                        <input type="range" id="WetlandLoss" min="1" max="10" value="5">
+                        <div class="range-value" id="WetlandLoss_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Air & Sungai -->
+            <div class="form-section">
+                <h4>💧 Air & Sungai</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="Siltation">Pendangkalan (Siltasi) (1-10)</label>
+                        <input type="range" id="Siltation" min="1" max="10" value="5">
+                        <div class="range-value" id="Siltation_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="Watersheds">Kondisi Daerah Aliran (1-10)</label>
+                        <input type="range" id="Watersheds" min="1" max="10" value="5">
+                        <div class="range-value" id="Watersheds_val">5</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="DamsQuality">Kualitas Bendungan (1-10)</label>
+                        <input type="range" id="DamsQuality" min="1" max="10" value="5">
+                        <div class="range-value" id="DamsQuality_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Infrastruktur & Pembangunan -->
+            <div class="form-section">
+                <h4>🏗️ Infrastruktur & Pembangunan</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="DeterioratingInfrastructure">Infrastruktur Rusak (1-10)</label>
+                        <input type="range" id="DeterioratingInfrastructure" min="1" max="10" value="5">
+                        <div class="range-value" id="DeterioratingInfrastructure_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="Encroachments">Enkrousmen/Pengganggu (1-10)</label>
+                        <input type="range" id="Encroachments" min="1" max="10" value="5">
+                        <div class="range-value" id="Encroachments_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risiko & Kesiapsiagaan -->
+            <div class="form-section">
+                <h4>⚠️ Risiko & Kesiapsiagaan</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="Landslides">Risiko Tanah Longsor (1-10)</label>
+                        <input type="range" id="Landslides" min="1" max="10" value="5">
+                        <div class="range-value" id="Landslides_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="CoastalVulnerability">Kerentanan Pesisir (1-10)</label>
+                        <input type="range" id="CoastalVulnerability" min="1" max="10" value="5">
+                        <div class="range-value" id="CoastalVulnerability_val">5</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="IneffectiveDisasterPreparedness">Kesiapsiagaan Bencana (1-10)</label>
+                        <input type="range" id="IneffectiveDisasterPreparedness" min="1" max="10" value="5">
+                        <div class="range-value" id="IneffectiveDisasterPreparedness_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Populasi & Perencanaan -->
+            <div class="form-section">
+                <h4>👥 Populasi & Perencanaan</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="PopulationScore">Skor Kepadatan Penduduk (1-10)</label>
+                        <input type="range" id="PopulationScore" min="1" max="10" value="5">
+                        <div class="range-value" id="PopulationScore_val">5</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="InadequatePlanning">Perencanaan Tidak Memadai (1-10)</label>
+                        <input type="range" id="InadequatePlanning" min="1" max="10" value="5">
+                        <div class="range-value" id="InadequatePlanning_val">5</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="PoliticalFactors">Faktor Politik (1-10)</label>
+                        <input type="range" id="PoliticalFactors" min="1" max="10" value="5">
+                        <div class="range-value" id="PoliticalFactors_val">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="button-group">
+                <button id="predictBtn">🔮 Prediksi Banjir</button>
+                <button id="resetBtn" class="secondary">↺ Reset</button>
             </div>
             
-            <div class="form-group">
-                <label for="ketinggian">Ketinggian Wilayah (mdpl)</label>
-                <input type="number" id="ketinggian" placeholder="Misal: 100">
-            </div>
-            
-            <div class="form-group">
-                <label for="pencemaran">Tingkat Pencemaran (1-10)</label>
-                <select id="pencemaran">
-                    <option value="1">1 - Sangat Rendah</option>
-                    <option value="3">3 - Rendah</option>
-                    <option value="5">5 - Sedang</option>
-                    <option value="7">7 - Tinggi</option>
-                    <option value="10">10 - Sangat Tinggi</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="resapan">Laju Resapan Air (1-10)</label>
-                <select id="resapan">
-                    <option value="10">10 - Sangat Cepat</option>
-                    <option value="7">7 - Cepat</option>
-                    <option value="5">5 - Sedang</option>
-                    <option value="3">3 - Lambat</option>
-                    <option value="1">1 - Sangat Lambat</option>
-                </select>
-            </div>
-            
-            <button id="predictBtn">Prediksi Banjir</button>
-            
+            <!-- Hasil Prediksi -->
             <div id="result" class="result">
-                <h3>Hasil Prediksi</h3>
-                <p><strong>Ketinggian Banjir:</strong> <span id="height">-</span> cm</p>
+                <h3>📊 Hasil Prediksi</h3>
+                <p><strong>Probabilitas Banjir:</strong> <span id="probability">-</span></p>
                 <p><strong>Tingkat Kerawanan:</strong> <span id="risk">-</span></p>
                 <p><strong>Status:</strong> <span id="status">-</span></p>
+                <p id="error" style="color: red; display: none;"></p>
             </div>
         </div>
         
