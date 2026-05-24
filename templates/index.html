@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>Sistem Informasi Geografis Prediksi Kerawanan Banjir DIY</h1>
+        <p>Berbasis Spatial Autoregressive (SAR)</p>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <h3>Parameter Prediksi</h3>
+            
+            <div class="form-group">
+                <label for="curah_hujan">Curah Hujan (mm/hari)</label>
+                <input type="number" id="curah_hujan" placeholder="Misal: 150">
+            </div>
+            
+            <div class="form-group">
+                <label for="ketinggian">Ketinggian Wilayah (mdpl)</label>
+                <input type="number" id="ketinggian" placeholder="Misal: 100">
+            </div>
+            
+            <div class="form-group">
+                <label for="pencemaran">Tingkat Pencemaran (1-10)</label>
+                <select id="pencemaran">
+                    <option value="1">1 - Sangat Rendah</option>
+                    <option value="3">3 - Rendah</option>
+                    <option value="5">5 - Sedang</option>
+                    <option value="7">7 - Tinggi</option>
+                    <option value="10">10 - Sangat Tinggi</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="resapan">Laju Resapan Air (1-10)</label>
+                <select id="resapan">
+                    <option value="10">10 - Sangat Cepat</option>
+                    <option value="7">7 - Cepat</option>
+                    <option value="5">5 - Sedang</option>
+                    <option value="3">3 - Lambat</option>
+                    <option value="1">1 - Sangat Lambat</option>
+                </select>
+            </div>
+            
+            <button id="predictBtn">Prediksi Banjir</button>
+            
+            <div id="result" class="result">
+                <h3>Hasil Prediksi</h3>
+                <p><strong>Ketinggian Banjir:</strong> <span id="height">-</span> cm</p>
+                <p><strong>Tingkat Kerawanan:</strong> <span id="risk">-</span></p>
+                <p><strong>Status:</strong> <span id="status">-</span></p>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
