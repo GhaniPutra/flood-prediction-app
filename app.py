@@ -5,20 +5,9 @@ from datetime import date
 import joblib
 import numpy as np
 import os
+from config import DB_CONFIG, FEATURE_NAMES, RISK_THRESHOLDS, MODEL_PATH, SCALER_PATH
 
 app = Flask(__name__)
-
-# Konfigurasi database (bisa pindah ke config file nanti)
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'flood_prediksi'
-}
-
-# Load trained model dan scaler
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'models', 'flood_predictor.pkl')
-SCALER_PATH = os.path.join(os.path.dirname(__file__), 'models', 'flood_scaler.pkl')
 
 try:
     flood_model = joblib.load(MODEL_PATH)
@@ -28,16 +17,6 @@ except Exception as e:
     print(f"⚠ Warning: Tidak bisa load model - {e}")
     flood_model = None
     flood_scaler = None
-
-# Feature names yang digunakan model
-FEATURE_NAMES = [
-    'MonsoonIntensity', 'TopographyDrainage', 'RiverManagement', 'Deforestation',
-    'Urbanization', 'ClimateChange', 'DamsQuality', 'Siltation',
-    'AgriculturalPractices', 'Encroachments', 'IneffectiveDisasterPreparedness',
-    'DrainageSystems', 'CoastalVulnerability', 'Landslides', 'Watersheds',
-    'DeterioratingInfrastructure', 'PopulationScore', 'WetlandLoss',
-    'InadequatePlanning', 'PoliticalFactors'
-]
 
 def get_db_connection():
     try:
