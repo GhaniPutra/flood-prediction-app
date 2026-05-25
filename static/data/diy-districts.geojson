@@ -1,0 +1,172 @@
+{
+  "type": "FeatureCollection",
+  "name": "DIY-Districts",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "properties": {
+        "id_kecamatan": 1,
+        "nama": "Kota Yogyakarta",
+        "kabupaten": "Yogyakarta",
+        "luas_km2": 32.5,
+        "jumlah_penduduk": 417710,
+        "latitude": -7.7956,
+        "longitude": 110.3695
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.3495, -7.7856],
+          [110.3895, -7.7856],
+          [110.3895, -7.8056],
+          [110.3495, -7.8056],
+          [110.3495, -7.7856]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "properties": {
+        "id_kecamatan": 2,
+        "nama": "Kabupaten Sleman",
+        "kabupaten": "Sleman",
+        "luas_km2": 574.82,
+        "jumlah_penduduk": 1158440,
+        "latitude": -7.5912,
+        "longitude": 110.4045
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.1845, -7.3412],
+          [110.6245, -7.3412],
+          [110.6245, -7.8412],
+          [110.1845, -7.8412],
+          [110.1845, -7.3412]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "properties": {
+        "id_kecamatan": 3,
+        "nama": "Kabupaten Bantul",
+        "kabupaten": "Bantul",
+        "luas_km2": 506.85,
+        "jumlah_penduduk": 909973,
+        "latitude": -7.9833,
+        "longitude": 110.3167
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.0967, -7.7433],
+          [110.5367, -7.7433],
+          [110.5367, -8.2233],
+          [110.0967, -8.2233],
+          [110.0967, -7.7433]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {
+        "id_kecamatan": 4,
+        "nama": "Kabupaten Gunung Kidul",
+        "kabupaten": "Gunung Kidul",
+        "luas_km2": 1485.36,
+        "jumlah_penduduk": 724177,
+        "latitude": -8.2547,
+        "longitude": 110.6428
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.4228, -7.9747],
+          [110.8628, -7.9747],
+          [110.8628, -8.5347],
+          [110.4228, -8.5347],
+          [110.4228, -7.9747]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {
+        "id_kecamatan": 5,
+        "nama": "Kabupaten Kulon Progo",
+        "kabupaten": "Kulon Progo",
+        "luas_km2": 586.27,
+        "jumlah_penduduk": 380504,
+        "latitude": -7.8275,
+        "longitude": 110.0183
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [109.7983, -7.5475],
+          [110.2583, -7.5475],
+          [110.2583, -8.1075],
+          [109.7983, -8.1075],
+          [109.7983, -7.5475]
+        ]]
+      }
+    }
+  ]
+}
+        "jumlah_penduduk": 953738,
+        "latitude": -7.9833,
+        "longitude": 110.3167
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.15, -7.85], [110.45, -7.85], [110.45, -8.3], [110.15, -8.3], [110.15, -7.85]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 4,
+      "properties": {
+        "id_kecamatan": 4,
+        "nama": "Kabupaten Gunung Kidul",
+        "kabupaten": "Gunung Kidul",
+        "luas_km2": 1485.31,
+        "jumlah_penduduk": 713937,
+        "latitude": -8.2547,
+        "longitude": 110.6428
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.45, -8.0], [110.85, -8.0], [110.85, -8.5], [110.45, -8.5], [110.45, -8.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "properties": {
+        "id_kecamatan": 5,
+        "nama": "Kabupaten Kulon Progo",
+        "kabupaten": "Kulon Progo",
+        "luas_km2": 586.27,
+        "jumlah_penduduk": 385088,
+        "latitude": -7.8275,
+        "longitude": 110.0183
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [109.8, -7.5], [110.2, -7.5], [110.2, -8.2], [109.8, -8.2], [109.8, -7.5]
+        ]]
+      }
+    }
+  ]
+}

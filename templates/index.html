@@ -4,251 +4,392 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
     <style>
-        .form-section {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f5f5f5;
-            border-left: 4px solid #007bff;
-            border-radius: 4px;
-        }
-        .form-section h4 {
-            margin-top: 0;
-            color: #007bff;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .form-group input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-        .range-value {
-            font-size: 12px;
-            color: #666;
-            margin-top: 3px;
-            font-weight: bold;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .button-group button {
-            flex: 1;
-        }
-        button.secondary {
-            background-color: #6c757d;
-        }
-        button.secondary:hover {
-            background-color: #5a6268;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Sistem Informasi Geografis Prediksi Kerawanan Banjir DIY</h1>
-        <p>Berbasis Machine Learning - Random Forest Regressor</p>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+        </svg>
+        <div>
+            <h1>SIG Prediksi Banjir <span class="brand-region">DIY</span></h1>
+            <p>Random Forest Regressor &mdash; Machine Learning</p>
+        </div>
     </div>
-    
-    <div class="container">
-        <div class="sidebar">
-            <h3>Parameter Prediksi</h3>
-            
-            <!-- Cuaca & Iklim -->
-            <div class="form-section">
-                <h4>🌧️ Cuaca & Iklim</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="MonsoonIntensity">Intensitas Monsun (1-10)</label>
-                        <input type="range" id="MonsoonIntensity" min="1" max="10" value="5">
-                        <div class="range-value" id="MonsoonIntensity_val">5</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="ClimateChange">Perubahan Iklim (1-10)</label>
-                        <input type="range" id="ClimateChange" min="1" max="10" value="5">
-                        <div class="range-value" id="ClimateChange_val">5</div>
+    <div class="topbar-right">
+        <div class="model-status" id="model-status">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Memeriksa model…</span>
+        </div>
+        <span class="meta-chip">20 parameter</span>
+    </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-scroll">
+
+            <!-- 1. Cuaca & Iklim -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 16.25"/>
+                            <line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/>
+                            <line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Cuaca &amp; Iklim</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="MonsoonIntensity">Intensitas Monsun</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="MonsoonIntensity" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="MonsoonIntensity_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="ClimateChange">Perubahan Iklim</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="ClimateChange" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="ClimateChange_val">5</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Topografi & Drainase -->
-            <div class="form-section">
-                <h4>🏔️ Topografi & Drainase</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="TopographyDrainage">Drainase Topografi (1-10)</label>
-                        <input type="range" id="TopographyDrainage" min="1" max="10" value="5">
-                        <div class="range-value" id="TopographyDrainage_val">5</div>
+            <!-- 2. Topografi & Drainase -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="3 17 9 3 15 17"/><polygon points="9 17 15 3 21 17"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Topografi &amp; Drainase</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="TopographyDrainage">Drainase Topografi</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="TopographyDrainage" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="TopographyDrainage_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="RiverManagement">Manajemen Sungai</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="RiverManagement" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="RiverManagement_val">5</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="RiverManagement">Manajemen Sungai (1-10)</label>
-                        <input type="range" id="RiverManagement" min="1" max="10" value="5">
-                        <div class="range-value" id="RiverManagement_val">5</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="DrainageSystems">Sistem Drainase (1-10)</label>
-                        <input type="range" id="DrainageSystems" min="1" max="10" value="5">
-                        <div class="range-value" id="DrainageSystems_val">5</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Penggunaan Lahan -->
-            <div class="form-section">
-                <h4>🌲 Penggunaan Lahan</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="Deforestation">Deforestasi (1-10)</label>
-                        <input type="range" id="Deforestation" min="1" max="10" value="5">
-                        <div class="range-value" id="Deforestation_val">5</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="Urbanization">Urbanisasi (1-10)</label>
-                        <input type="range" id="Urbanization" min="1" max="10" value="5">
-                        <div class="range-value" id="Urbanization_val">5</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="AgriculturalPractices">Praktik Pertanian (1-10)</label>
-                        <input type="range" id="AgriculturalPractices" min="1" max="10" value="5">
-                        <div class="range-value" id="AgriculturalPractices_val">5</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="WetlandLoss">Hilangnya Lahan Basah (1-10)</label>
-                        <input type="range" id="WetlandLoss" min="1" max="10" value="5">
-                        <div class="range-value" id="WetlandLoss_val">5</div>
+                    <div class="param-row">
+                        <div class="param-item param-full">
+                            <label for="DrainageSystems">Sistem Drainase</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="DrainageSystems" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="DrainageSystems_val">5</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Air & Sungai -->
-            <div class="form-section">
-                <h4>💧 Air & Sungai</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="Siltation">Pendangkalan (Siltasi) (1-10)</label>
-                        <input type="range" id="Siltation" min="1" max="10" value="5">
-                        <div class="range-value" id="Siltation_val">5</div>
+            <!-- 3. Penggunaan Lahan -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 14l-5-5-5 5"/><path d="M3 19h18"/><path d="M12 9V3"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Penggunaan Lahan</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="Deforestation">Deforestasi</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Deforestation" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Deforestation_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="Urbanization">Urbanisasi</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Urbanization" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Urbanization_val">5</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="Watersheds">Kondisi Daerah Aliran (1-10)</label>
-                        <input type="range" id="Watersheds" min="1" max="10" value="5">
-                        <div class="range-value" id="Watersheds_val">5</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="DamsQuality">Kualitas Bendungan (1-10)</label>
-                        <input type="range" id="DamsQuality" min="1" max="10" value="5">
-                        <div class="range-value" id="DamsQuality_val">5</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Infrastruktur & Pembangunan -->
-            <div class="form-section">
-                <h4>🏗️ Infrastruktur & Pembangunan</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="DeterioratingInfrastructure">Infrastruktur Rusak (1-10)</label>
-                        <input type="range" id="DeterioratingInfrastructure" min="1" max="10" value="5">
-                        <div class="range-value" id="DeterioratingInfrastructure_val">5</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="Encroachments">Enkrousmen/Pengganggu (1-10)</label>
-                        <input type="range" id="Encroachments" min="1" max="10" value="5">
-                        <div class="range-value" id="Encroachments_val">5</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Risiko & Kesiapsiagaan -->
-            <div class="form-section">
-                <h4>⚠️ Risiko & Kesiapsiagaan</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="Landslides">Risiko Tanah Longsor (1-10)</label>
-                        <input type="range" id="Landslides" min="1" max="10" value="5">
-                        <div class="range-value" id="Landslides_val">5</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="CoastalVulnerability">Kerentanan Pesisir (1-10)</label>
-                        <input type="range" id="CoastalVulnerability" min="1" max="10" value="5">
-                        <div class="range-value" id="CoastalVulnerability_val">5</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="IneffectiveDisasterPreparedness">Kesiapsiagaan Bencana (1-10)</label>
-                        <input type="range" id="IneffectiveDisasterPreparedness" min="1" max="10" value="5">
-                        <div class="range-value" id="IneffectiveDisasterPreparedness_val">5</div>
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="AgriculturalPractices">Praktik Pertanian</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="AgriculturalPractices" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="AgriculturalPractices_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="WetlandLoss">Hilangnya Lahan Basah</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="WetlandLoss" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="WetlandLoss_val">5</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Populasi & Perencanaan -->
-            <div class="form-section">
-                <h4>👥 Populasi & Perencanaan</h4>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PopulationScore">Skor Kepadatan Penduduk (1-10)</label>
-                        <input type="range" id="PopulationScore" min="1" max="10" value="5">
-                        <div class="range-value" id="PopulationScore_val">5</div>
+            <!-- 4. Air & Sungai -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Air &amp; Sungai</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="Siltation">Pendangkalan (Siltasi)</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Siltation" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Siltation_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="Watersheds">Kondisi Daerah Aliran</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Watersheds" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Watersheds_val">5</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="InadequatePlanning">Perencanaan Tidak Memadai (1-10)</label>
-                        <input type="range" id="InadequatePlanning" min="1" max="10" value="5">
-                        <div class="range-value" id="InadequatePlanning_val">5</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="PoliticalFactors">Faktor Politik (1-10)</label>
-                        <input type="range" id="PoliticalFactors" min="1" max="10" value="5">
-                        <div class="range-value" id="PoliticalFactors_val">5</div>
+                    <div class="param-row">
+                        <div class="param-item param-full">
+                            <label for="DamsQuality">Kualitas Bendungan</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="DamsQuality" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="DamsQuality_val">5</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tombol Aksi -->
-            <div class="button-group">
-                <button id="predictBtn">🔮 Prediksi Banjir</button>
-                <button id="resetBtn" class="secondary">↺ Reset</button>
+            <!-- 5. Infrastruktur & Pembangunan -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2"/>
+                            <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Infrastruktur &amp; Pembangunan</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="DeterioratingInfrastructure">Infrastruktur Rusak</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="DeterioratingInfrastructure" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="DeterioratingInfrastructure_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="Encroachments">Enkroasment</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Encroachments" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Encroachments_val">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Hasil Prediksi -->
-            <div id="result" class="result">
-                <h3>📊 Hasil Prediksi</h3>
-                <p><strong>Probabilitas Banjir:</strong> <span id="probability">-</span></p>
-                <p><strong>Tingkat Kerawanan:</strong> <span id="risk">-</span></p>
-                <p><strong>Status:</strong> <span id="status">-</span></p>
-                <p id="error" style="color: red; display: none;"></p>
+
+            <!-- 6. Risiko & Kesiapsiagaan -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Risiko &amp; Kesiapsiagaan</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="Landslides">Risiko Tanah Longsor</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="Landslides" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="Landslides_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="CoastalVulnerability">Kerentanan Pesisir</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="CoastalVulnerability" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="CoastalVulnerability_val">5</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item param-full">
+                            <label for="IneffectiveDisasterPreparedness">Kesiapsiagaan Bencana</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="IneffectiveDisasterPreparedness" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="IneffectiveDisasterPreparedness_val">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Populasi & Perencanaan -->
+            <div class="param-group">
+                <button class="group-header" aria-expanded="true" type="button">
+                    <span class="group-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                    </span>
+                    <span class="group-title">Populasi &amp; Perencanaan</span>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="group-body">
+                    <div class="param-row">
+                        <div class="param-item">
+                            <label for="PopulationScore">Kepadatan Penduduk</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="PopulationScore" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="PopulationScore_val">5</span>
+                            </div>
+                        </div>
+                        <div class="param-item">
+                            <label for="InadequatePlanning">Perencanaan Tidak Memadai</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="InadequatePlanning" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="InadequatePlanning_val">5</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <div class="param-item param-full">
+                            <label for="PoliticalFactors">Faktor Politik</label>
+                            <div class="slider-wrap">
+                                <input type="range" id="PoliticalFactors" min="1" max="10" value="5" step="1">
+                                <span class="slider-val" id="PoliticalFactors_val">5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /sidebar-scroll -->
+
+        <!-- FOOTER SIDEBAR -->
+        <div class="sidebar-footer">
+            <div class="action-row">
+                <button id="predictBtn" class="btn-primary" type="button">
+                    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    Prediksi Banjir
+                </button>
+                <button id="resetBtn" class="btn-ghost" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                    </svg>
+                    Reset
+                </button>
             </div>
         </div>
-        
-        <div id="map"></div>
-    </div>
+    </aside>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Custom JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- MAP AREA -->
+    <main class="map-area">
+        <div id="map"></div>
+
+        <!-- Panel hasil — overlay pojok kiri bawah peta -->
+        <div class="result-panel" id="result-panel">
+            <div class="result-header">
+                <div class="result-header-left">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    <span class="result-title">Hasil Prediksi</span>
+                </div>
+                <span class="result-badge" id="result-badge"></span>
+            </div>
+            <div class="result-prob-row">
+                <span class="result-prob-num" id="probability">—</span>
+                <span class="result-prob-label">probabilitas banjir</span>
+            </div>
+            <div class="prob-track">
+                <div class="prob-fill" id="prob-fill"></div>
+            </div>
+            <div class="result-meta">
+                <div class="result-meta-item">
+                    <span class="meta-key">Zona Risiko</span>
+                    <span class="meta-val" id="risk">—</span>
+                </div>
+                <div class="result-meta-divider"></div>
+                <div class="result-meta-item">
+                    <span class="meta-key">Status</span>
+                    <span class="meta-val" id="status">—</span>
+                </div>
+            </div>
+            <p id="error" class="result-error" style="display:none;"></p>
+        </div>
+
+        <!-- Legend pojok kanan bawah -->
+        <div class="map-legend">
+            <p class="legend-title">Tingkat Kerawanan</p>
+            <ul class="legend-list">
+                <li><span class="legend-swatch" style="background:#2ecc71;"></span>Rendah (&le;35%)</li>
+                <li><span class="legend-swatch" style="background:#f39c12;"></span>Sedang (35–50%)</li>
+                <li><span class="legend-swatch" style="background:#e74c3c;"></span>Tinggi (50–75%)</li>
+                <li><span class="legend-swatch" style="background:#8b0000;"></span>Sangat Tinggi (&gt;75%)</li>
+            </ul>
+        </div>
+    </main>
+
+</div><!-- /layout -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="static/js/main.js"></script>
 </body>
 </html>
