@@ -1,3 +1,26 @@
+## 🗺️ SIG Prediksi Banjir DIY - Interactive District Predictions
+
+Sistem Informasi Geografis untuk memprediksi tingkat risiko banjir di **Daerah Istimewa Yogyakarta** menggunakan model **Random Forest Machine Learning**.
+
+### ✨ Fitur Utama (v2.0)
+
+- **Prediksi Per Kabupaten/Kota**: Pilih distrik di peta interaktif → dapatkan prediksi spesifik
+- **UI Interaktif**: Klik distrik untuk memilih, lihat hasil langsung di peta
+- **Sinkronisasi Database**: Setiap prediksi otomatis ter-log ke database dengan ID kabupaten
+- **20 Parameter Risiko**: Input berbagai faktor (iklim, topografi, infrastruktur, dll)
+- **Real-time Map Coloring**: Distrik berubah warna sesuai tingkat risiko (Hijau → Merah)
+- **Riwayat Prediksi**: Akses data historis prediksi per distrik
+
+### 🗺️ Coverage Area
+5 Kabupaten/Kota di DIY:
+- 🏙️ Kota Yogyakarta
+- 🌄 Kabupaten Sleman
+- 🌾 Kabupaten Bantul
+- ⛰️ Kabupaten Gunung Kidul
+- 🌳 Kabupaten Kulon Progo
+
+---
+
 ### 📝 Panduan Persiapan
 
 Sebelum memulai, pastikan komputer Anda sudah memiliki:
@@ -60,6 +83,17 @@ Aplikasi ini menggunakan database MySQL untuk menyimpan data. File `migrasi_floo
     ```
     Ganti `username` dan `nama_database` sesuai dengan konfigurasi MySQL Anda.
 
+3. **Populate Tabel Kecamatan** (Master District Data):
+   ```bash
+   mysql -u username -p flood_prediksi < setup_kecamatan.sql
+   ```
+   Ini akan memasukkan 5 kabupaten/kota DIY ke tabel `kecamatan` beserta koordinat dan data demografisnya.
+   
+   Verifikasi dengan menjalankan:
+   ```bash
+   mysql -u root flood_prediksi -e "SELECT * FROM kecamatan;"
+   ```
+
 #### **5. Konfigurasi Koneksi Database**
 Aplikasi perlu tahu cara terhubung ke database yang telah dibuat. Biasanya, informasi ini disimpan dalam file konfigurasi seperti `.env` atau langsung di file `app.py`. Lihatlah file `app.py` untuk mencari baris yang berisi konfigurasi koneksi, mirip seperti ini:
 ```python
@@ -87,7 +121,59 @@ Buka browser web Anda dan kunjungi alamat `http://127.0.0.1:5000` untuk mulai me
 
 ---
 
-### ⚠️ Tips Penting untuk Kelancaran Proyek
+### 🎯 Cara Menggunakan Aplikasi (v2.0)
+
+Setelah aplikasi berjalan di `http://127.0.0.1:5000`:
+
+1. **Lihat Peta Interaktif**
+   - 5 kabupaten/kota DIY ditampilkan dengan warna biru (status unpredicted)
+
+2. **Pilih Kabupaten**
+   - Klik pada salah satu distrik di peta
+   - Distrik akan ter-highlight dengan border tebal
+
+3. **Atur Parameter Risiko**
+   - Slide 20 parameter di panel kiri (Cuaca, Topografi, Lahan, Air, Infrastruktur, Risiko, Populasi)
+   - Nilai berkisar 1-10 untuk setiap faktor
+
+4. **Jalankan Prediksi**
+   - Klik tombol **"Prediksi Banjir"**
+   - Sistem akan:
+     - Menjalankan model ML dengan parameter yang Anda input
+     - **Menyimpan hasil ke database** `prediksi` tabel ✓
+     - Menampilkan probabilitas banjir dalam %
+     - Menentukan zona risiko (Rendah/Sedang/Tinggi/Sangat Tinggi)
+
+5. **Lihat Hasil di Peta**
+   - Distrik yang dipilih berubah warna sesuai tingkat risiko:
+     - 🟢 **Hijau**: ≤35% probabilitas (Rendah)
+     - 🟡 **Kuning**: 35-50% (Sedang)
+     - 🟠 **Oranye**: 50-75% (Tinggi)
+     - 🔴 **Merah Tua**: >75% (Sangat Tinggi)
+   - Popup distrik menampilkan nama + probability terbaru
+
+6. **Reset Semua**
+   - Klik **"Reset"** untuk kembali ke state awal (semua biru)
+
+### 📊 Akses Data Prediksi
+
+Query database untuk melihat riwayat prediksi:
+```sql
+SELECT id_prediksi, id_kecamatan, tanggal_prediksi, 
+       hasil_ketinggian_cm as probability, zona_kerawanan 
+FROM prediksi 
+ORDER BY tanggal_prediksi DESC 
+LIMIT 10;
+```
+
+Atau gunakan API endpoint:
+```bash
+curl http://localhost:5000/prediction-history/2
+```
+
+---
+
+
 
 *   **Pastikan Port 5000 Tersedia**: Aplikasi Flask biasanya berjalan di port 5000. Jika port ini sedang digunakan oleh program lain (misalnya, AirPlay Receiver di macOS), Anda bisa menghentikan program tersebut atau mengganti port di file `app.py`.
 *   **Periksa Kembali Dependensi**: Jika ada error saat instalasi, pastikan `pip` Anda sudah versi terbaru dengan menjalankan `python -m pip install --upgrade pip`. Jika instalasi berjalan lambat, Anda bisa menggunakan server cermin (mirror) dengan perintah `pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple`.

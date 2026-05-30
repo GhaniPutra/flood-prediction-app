@@ -11,8 +11,8 @@ app = Flask(__name__)
 # Konfigurasi database (bisa pindah ke config file nanti)
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root',
-    'password': '',
+    'user': 'admin',
+    'password': 'admin123',
     'database': 'flood_prediksi'
 }
 
@@ -135,6 +135,181 @@ def get_features():
         'count': len(FEATURE_NAMES),
         'model_status': 'loaded' if flood_model is not None else 'not_loaded'
     })
+
+@app.route('/districts', methods=['GET'])
+def get_districts():
+    """Return daftar kabupaten/kota dengan data dari database"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_kecamatan, nama_kecamatan, kabupaten_kota, 
+                   luas_km2, jumlah_penduduk, latitude, longitude
+            FROM kecamatan
+            ORDER BY id_kecamatan ASC
+        """)
+        districts = cursor.fetchall()
+        return jsonify({
+            'status': 'success',
+            'data': districts,
+            'count': len(districts)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/district/<int:district_id>', methods=['GET'])
+def get_district_detail(district_id):
+    """Return detail kabupaten spesifik"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_kecamatan, nama_kecamatan, kabupaten_kota,
+                   luas_km2, jumlah_penduduk, latitude, longitude
+            FROM kecamatan
+            WHERE id_kecamatan = %s
+        """, (district_id,))
+        district = cursor.fetchone()
+        
+        if not district:
+            return jsonify({'error': 'District not found'}), 404
+        
+        # Get historical data
+        cursor.execute("""
+            SELECT tanggal, curah_hujan_mm, ketinggian_mdpl, 
+                   tingkat_pencemaran, laju_resapan, ketinggian_banjir_cm
+            FROM data_historis
+            WHERE id_kecamatan = %s
+            ORDER BY tanggal DESC
+            LIMIT 10
+        """, (district_id,))
+        historical = cursor.fetchall()
+        
+        return jsonify({
+            'status': 'success',
+            'district': district,
+            'historical_data': historical
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@app.route('/predict-district', methods=['POST'])
+def predict_district():
+    """Predict flood untuk kabupaten spesifik dan log ke database"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    district_id = data.get('district_id')
+    if not district_id:
+        return jsonify({'error': 'district_id required'}), 400
+    
+    # Validasi bahwa semua fitur ada di request
+    missing_features = [f for f in FEATURE_NAMES if f not in data]
+    if missing_features:
+        return jsonify({
+            'error': f'Missing features: {", ".join(missing_features)}',
+            'required_features': FEATURE_NAMES
+        }), 400
+    
+    try:
+        # Ekstrak dan validate fitur dari request
+        feature_values = []
+        for feature in FEATURE_NAMES:
+            value = data.get(feature)
+            if value is None:
+                return jsonify({'error': f'Feature {feature} tidak boleh kosong'}), 400
+            try:
+                feature_values.append(float(value))
+            except ValueError:
+                return jsonify({'error': f'Feature {feature} harus berupa angka'}), 400
+        
+        # Convert ke numpy array dan scale
+        X = np.array([feature_values])
+        X_scaled = flood_scaler.transform(X)
+        
+        # Predict dengan model
+        flood_probability = flood_model.predict(X_scaled)[0]
+        
+        # Ensure probability dalam range 0-1
+        flood_probability = float(np.clip(flood_probability, 0, 1))
+        
+        # Tentukan risk zone
+        risk_zone = get_risk_zone(flood_probability)
+        
+        # Log ke database per district
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                # Verifikasi district ada
+                cursor.execute("SELECT id_kecamatan FROM kecamatan WHERE id_kecamatan = %s", (district_id,))
+                if not cursor.fetchone():
+                    return jsonify({'error': 'District not found'}), 404
+                
+                # Log prediksi
+                cursor.execute("""
+                    INSERT INTO prediksi (
+                        id_kecamatan, tanggal_prediksi, 
+                        hasil_ketinggian_cm, zona_kerawanan
+                    ) VALUES (%s, %s, %s, %s)
+                """, (district_id, date.today(), 
+                      flood_probability * 100, risk_zone))  # Simpan probability as cm height
+                conn.commit()
+            except Exception as e:
+                print(f"Warning: Database log error - {e}")
+            finally:
+                conn.close()
+        
+        return jsonify({
+            'flood_probability': round(flood_probability, 4),
+            'risk_zone': risk_zone,
+            'district_id': district_id,
+            'status': 'success'
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/prediction-history/<int:district_id>', methods=['GET'])
+def get_prediction_history(district_id):
+    """Get riwayat prediksi untuk kabupaten"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_prediksi, tanggal_prediksi, 
+                   hasil_ketinggian_cm as flood_probability,
+                   zona_kerawanan as risk_zone
+            FROM prediksi
+            WHERE id_kecamatan = %s
+            ORDER BY tanggal_prediksi DESC
+            LIMIT 30
+        """, (district_id,))
+        history = cursor.fetchall()
+        
+        return jsonify({
+            'status': 'success',
+            'data': history,
+            'count': len(history)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
