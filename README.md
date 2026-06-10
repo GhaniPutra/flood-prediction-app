@@ -11,6 +11,17 @@ Sistem Informasi Geografis untuk memprediksi tingkat risiko banjir di **Daerah I
 - **Real-time Map Coloring**: Distrik berubah warna sesuai tingkat risiko (Hijau → Merah)
 - **Riwayat Prediksi**: Akses data historis prediksi per distrik
 
+### ⚡ Update Terbaru (v2.1)
+
+Pembaruan sistem terintegrasi untuk meningkatkan sinkronisasi data spasial, database, dan antarmuka pengguna:
+- **Sinkronisasi Koordinat Database & Peta**: Peta sekarang membaca koordinat `latitude` dan `longitude` secara dinamis dari database MySQL (tabel `kecamatan`) untuk menggambar marker penanda di pusat tiap wilayah, serta melakukan pergeseran peta (*pan*) otomatis ke pusat koordinat wilayah terpilih.
+- **Pemisahan Geometri Kota Yogyakarta & Sleman**: Memperbaiki tumpang tindih batas wilayah dengan memotong wilayah Kota Yogyakarta dari polygon Sleman (teknik interior ring/hole di GeoJSON) agar pemilihan daerah independen dan akurat.
+- **Tampilan Informasi Wilayah Real-time**: Menambahkan panel detail wilayah yang menampilkan data riil dari database (Nama, Kabupaten/Kota, Luas Wilayah, Jumlah Penduduk, dan Koordinat) segera setelah wilayah dipilih di peta.
+- **Persistensi Skenario Slider**: Nilai slider skenario (seperti Intensitas Monsun, Perubahan Iklim, dll.) tetap dipertahankan saat berpindah wilayah agar pengguna dapat membandingkan dampak skenario cuaca yang sama di daerah berbeda tanpa menginput ulang (*kerja dua kali*).
+- **Logika Override Karakteristik Fisik**: Parameter fisik bawaan daerah (seperti kepadatan penduduk, kerentanan pesisir, kerentanan longsor, dan luas wilayah) secara otomatis ditangani dan ditimpa di sisi backend (`app.py`) berdasarkan `district_id`, sehingga menghasilkan probabilitas prediksi risiko banjir yang unik dan akurat per kabupaten.
+- **Prediksi Otomatis Real-time**: Prediksi dijalankan seketika (*live update*) saat pengguna menggeser slider parameter tanpa harus mengklik tombol secara manual berkali-kali.
+- **Perbaikan Koneksi Database Default**: Penyesuaian `DB_CONFIG` di backend ke konfigurasi umum (`user: root` dan tanpa password) sesuai konfigurasi MySQL lingkungan kerja lokal.
+
 ### 🗺️ Coverage Area
 5 Kabupaten/Kota di DIY:
 - 🏙️ Kota Yogyakarta

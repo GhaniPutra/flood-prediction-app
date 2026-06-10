@@ -25,6 +25,64 @@ const RISK_COLORS = {
 let selectedDistrictId = null;
 let districtPredictions = {}; // Cache prediksi per distrik
 let districtLayers = {}; // Store reference layer per distrik
+let dbDistricts = {}; // Cache data kecamatan dari database
+let districtMarkers = {}; // Store reference marker per distrik
+let districtSliders = {}; // Cache slider values per distrik
+
+// List parameter yang bersifat spesifik wilayah (karakteristik bawaan daerah)
+const DISTRICT_SPECIFIC_FEATURES = [
+    'TopographyDrainage', 
+    'Deforestation', 
+    'Urbanization', 
+    'CoastalVulnerability', 
+    'Landslides', 
+    'PopulationScore',
+    'WetlandLoss'
+];
+
+// Baseline karakteristik masing-masing wilayah (sesuai kondisi demografis/geografis nyata)
+const DISTRICT_BASELINES = {
+    1: { // Kota Yogyakarta (Sangat Padat, Urban, Rata, Landlocked)
+        MonsoonIntensity: 5, TopographyDrainage: 4, RiverManagement: 6, Deforestation: 2,
+        Urbanization: 9, ClimateChange: 5, DamsQuality: 5, Siltation: 6,
+        AgriculturalPractices: 2, Encroachments: 7, IneffectiveDisasterPreparedness: 5,
+        DrainageSystems: 4, CoastalVulnerability: 1, Landslides: 1, Watersheds: 4,
+        DeterioratingInfrastructure: 5, PopulationScore: 9, WetlandLoss: 8,
+        InadequatePlanning: 6, PoliticalFactors: 5
+    },
+    2: { // Kabupaten Sleman (Lereng Merapi, Pertanian/Suburban, Landlocked)
+        MonsoonIntensity: 5, TopographyDrainage: 6, RiverManagement: 6, Deforestation: 4,
+        Urbanization: 6, ClimateChange: 5, DamsQuality: 6, Siltation: 4,
+        AgriculturalPractices: 6, Encroachments: 4, IneffectiveDisasterPreparedness: 4,
+        DrainageSystems: 5, CoastalVulnerability: 1, Landslides: 5, Watersheds: 6,
+        DeterioratingInfrastructure: 4, PopulationScore: 6, WetlandLoss: 5,
+        InadequatePlanning: 4, PoliticalFactors: 5
+    },
+    3: { // Kabupaten Bantul (Muara Sungai, Pesisir, Pertanian)
+        MonsoonIntensity: 5, TopographyDrainage: 3, RiverManagement: 5, Deforestation: 3,
+        Urbanization: 5, ClimateChange: 5, DamsQuality: 5, Siltation: 7,
+        AgriculturalPractices: 7, Encroachments: 5, IneffectiveDisasterPreparedness: 5,
+        DrainageSystems: 4, CoastalVulnerability: 6, Landslides: 3, Watersheds: 5,
+        DeterioratingInfrastructure: 5, PopulationScore: 5, WetlandLoss: 6,
+        InadequatePlanning: 5, PoliticalFactors: 5
+    },
+    4: { // Kabupaten Gunung Kidul (Pegunungan Karst, Pesisir, Kepadatan Rendah)
+        MonsoonIntensity: 5, TopographyDrainage: 7, RiverManagement: 4, Deforestation: 5,
+        Urbanization: 3, ClimateChange: 5, DamsQuality: 4, Siltation: 3,
+        AgriculturalPractices: 5, Encroachments: 3, IneffectiveDisasterPreparedness: 6,
+        DrainageSystems: 3, CoastalVulnerability: 7, Landslides: 8, Watersheds: 4,
+        DeterioratingInfrastructure: 6, PopulationScore: 2, WetlandLoss: 3,
+        InadequatePlanning: 5, PoliticalFactors: 5
+    },
+    5: { // Kabupaten Kulon Progo (Dataran Rendah & Perbukitan, Bandara YIA, Pesisir)
+        MonsoonIntensity: 5, TopographyDrainage: 5, RiverManagement: 5, Deforestation: 5,
+        Urbanization: 4, ClimateChange: 5, DamsQuality: 5, Siltation: 5,
+        AgriculturalPractices: 6, Encroachments: 4, IneffectiveDisasterPreparedness: 5,
+        DrainageSystems: 4, CoastalVulnerability: 6, Landslides: 5, Watersheds: 5,
+        DeterioratingInfrastructure: 5, PopulationScore: 3, WetlandLoss: 4,
+        InadequatePlanning: 5, PoliticalFactors: 5
+    }
+};
 
 // ============================================================
 // INISIALISASI PETA
@@ -71,58 +129,94 @@ function defaultStyle(feature) {
     return getDistrictStyle(feature.properties.id_kecamatan);
 }
 
-// Load district GeoJSON
-fetch('/static/data/diy-districts.geojson')
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
-        geojsonLayer = L.geoJSON(data, {
-            style: defaultStyle,
-            onEachFeature: function (feature, layer) {
-                const districtId = feature.properties.id_kecamatan;
-                const name = feature.properties.nama || 'Unknown';
-                
-                districtLayers[districtId] = layer;
-                
-                // Popup dengan info kabupaten
-                let popupContent = '<strong style="font-size:13px;">' + name + '</strong>' +
-                    '<br><span style="color:#4b6080;font-size:11px;">Klik untuk prediksi</span>';
-                
-                if (districtPredictions[districtId]) {
-                    const pred = districtPredictions[districtId];
-                    popupContent += '<br><span style="font-weight:600;color:#0f1f38;font-size:12px;">' + 
-                        (pred.flood_probability * 100).toFixed(1) + '% - ' + pred.risk_zone + '</span>';
-                }
-                
-                layer.bindPopup(popupContent, { maxWidth: 250 });
-                
-                // Event handlers
-                layer.on({
-                    mouseover: function (e) {
-                        const weight = selectedDistrictId === districtId ? 3 : 2.5;
-                        e.target.setStyle({ weight: weight, fillOpacity: 0.65 });
-                        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                            e.target.bringToFront();
-                        }
-                    },
-                    mouseout: function (e) {
-                        const style = getDistrictStyle(districtId);
-                        style.weight = selectedDistrictId === districtId ? 2.5 : 1.5;
-                        e.target.setStyle(style);
-                    },
-                    click: function (e) {
-                        selectDistrict(districtId, feature.properties);
-                    }
+// Load data kecamatan dari database, kemudian muat GeoJSON
+function loadMapData() {
+    fetch('/districts')
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === 'success') {
+                res.data.forEach(district => {
+                    dbDistricts[district.id_kecamatan] = district;
                 });
             }
-        }).addTo(map);
-        
-        map.fitBounds(geojsonLayer.getBounds(), { padding: [30, 30] });
-    })
-    .catch(err => {
-        console.error('GeoJSON error:', err);
-        document.getElementById('error').textContent = '❌ Gagal memuat peta: ' + err.message;
-        document.getElementById('error').style.display = 'block';
-    });
+            loadGeoJSON();
+        })
+        .catch(err => {
+            console.error('Database districts error:', err);
+            loadGeoJSON(); // Tetap muat GeoJSON jika gagal
+        });
+}
+
+function loadGeoJSON() {
+    fetch('/static/data/diy-districts.geojson')
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(data => {
+            geojsonLayer = L.geoJSON(data, {
+                style: defaultStyle,
+                onEachFeature: function (feature, layer) {
+                    const districtId = feature.properties.id_kecamatan;
+                    const dbData = dbDistricts[districtId] || {};
+                    const name = dbData.nama_kecamatan || feature.properties.nama || 'Unknown';
+                    const lat = dbData.latitude ? parseFloat(dbData.latitude) : feature.properties.latitude;
+                    const lng = dbData.longitude ? parseFloat(dbData.longitude) : feature.properties.longitude;
+                    
+                    districtLayers[districtId] = layer;
+                    
+                    // Tambah Marker Koordinat dari Database ke Peta
+                    if (lat && lng) {
+                        const marker = L.marker([lat, lng]).addTo(map);
+                        marker.bindPopup(`<strong style="font-size:13px;">${name}</strong><br><span style="color:#2563eb;font-size:11px;">Koordinat DB: ${lat}, ${lng}</span>`);
+                        
+                        marker.on('click', function() {
+                            selectDistrict(districtId, dbData);
+                        });
+                        districtMarkers[districtId] = marker;
+                    }
+                    
+                    // Popup dengan info kabupaten
+                    let popupContent = '<strong style="font-size:13px;">' + name + '</strong>' +
+                        '<br><span style="color:#4b6080;font-size:11px;">Klik untuk prediksi</span>';
+                    
+                    if (districtPredictions[districtId]) {
+                        const pred = districtPredictions[districtId];
+                        popupContent += '<br><span style="font-weight:600;color:#0f1f38;font-size:12px;">' + 
+                            (pred.flood_probability * 100).toFixed(1) + '% - ' + pred.risk_zone + '</span>';
+                    }
+                    
+                    layer.bindPopup(popupContent, { maxWidth: 250 });
+                    
+                    // Event handlers untuk polygon
+                    layer.on({
+                        mouseover: function (e) {
+                            const weight = selectedDistrictId === districtId ? 3 : 2.5;
+                            e.target.setStyle({ weight: weight, fillOpacity: 0.65 });
+                            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                                e.target.bringToFront();
+                            }
+                        },
+                        mouseout: function (e) {
+                            const style = getDistrictStyle(districtId);
+                            style.weight = selectedDistrictId === districtId ? 2.5 : 1.5;
+                            e.target.setStyle(style);
+                        },
+                        click: function (e) {
+                            selectDistrict(districtId, dbData);
+                        }
+                    });
+                }
+            }).addTo(map);
+            
+            map.fitBounds(geojsonLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(err => {
+            console.error('GeoJSON error:', err);
+            document.getElementById('error').textContent = '❌ Gagal memuat peta: ' + err.message;
+            document.getElementById('error').style.display = 'block';
+        });
+}
+
+// Mulai loading data
+loadMapData();
 
 // ============================================================
 // FUNGSI PILIH KABUPATEN
@@ -140,10 +234,52 @@ function selectDistrict(districtId, properties) {
         districtLayers[dId].setStyle(style);
     });
     
-    // Highlight di sidebar (opsional)
-    console.log('Selected district:', districtId, properties);
+    // Ambil data detail wilayah dari database cache
+    const dbData = dbDistricts[districtId] || properties || {};
     
-    // Auto prediksi untuk district ini
+    // Update Tampilan Informasi Wilayah dari Database
+    const name = dbData.nama_kecamatan || dbData.nama || '—';
+    const kab = dbData.kabupaten_kota || dbData.kabupaten || '—';
+    const luas = dbData.luas_km2 || '—';
+    const penduduk = dbData.jumlah_penduduk ? parseInt(dbData.jumlah_penduduk).toLocaleString('id-ID') : '—';
+    const lat = dbData.latitude;
+    const lng = dbData.longitude;
+    const koordinatStr = (lat && lng) ? `${lat}, ${lng}` : '—';
+    
+    document.getElementById('info-name').textContent = name;
+    document.getElementById('info-kabupaten').textContent = kab;
+    document.getElementById('info-luas').textContent = luas;
+    document.getElementById('info-penduduk').textContent = penduduk;
+    document.getElementById('info-koordinat').textContent = koordinatStr;
+    
+    // Buat result-panel visible agar info wilayah terlihat
+    document.getElementById('result-panel').classList.add('visible');
+    
+    // Pan peta ke titik koordinat dari database
+    if (lat && lng) {
+        map.panTo([parseFloat(lat), parseFloat(lng)]);
+    }
+    
+    // Buka popup marker dari database jika ada
+    if (districtMarkers[districtId]) {
+        districtMarkers[districtId].openPopup();
+    }
+    
+    console.log('Selected district (DB Sync - Persistent Sliders):', districtId, dbData);
+    
+    // Reset status prediksi ke cached value atau kosong jika belum diprediksi
+    if (districtPredictions[districtId]) {
+        displayResult(districtPredictions[districtId], districtId);
+    } else {
+        document.getElementById('probability').textContent = '—';
+        document.getElementById('risk').textContent        = '—';
+        document.getElementById('status').textContent      = '—';
+        document.getElementById('result-badge').className   = 'result-badge';
+        document.getElementById('result-badge').textContent = '';
+        document.getElementById('prob-fill').style.width    = '0%';
+    }
+    
+    // Auto prediksi untuk district ini dengan nilai slider yang sedang aktif
     predictFloodForDistrict(districtId);
 }
 
@@ -196,6 +332,11 @@ document.addEventListener('DOMContentLoaded', function () {
         slider.addEventListener('input', function () {
             valEl.textContent = this.value;
             updateSliderTrack(this);
+            
+            // Jalankan prediksi secara real-time saat user menggeser slider
+            if (selectedDistrictId) {
+                predictFloodForDistrict(selectedDistrictId);
+            }
         });
     });
 
@@ -227,9 +368,18 @@ document.addEventListener('DOMContentLoaded', function () {
             updateSliderTrack(slider);
             if (valEl) valEl.textContent = '5';
         });
+        
+        // Reset Info Wilayah
+        document.getElementById('info-name').textContent = '—';
+        document.getElementById('info-kabupaten').textContent = '—';
+        document.getElementById('info-luas').textContent = '—';
+        document.getElementById('info-penduduk').textContent = '—';
+        document.getElementById('info-koordinat').textContent = '—';
+        
         document.getElementById('result-panel').classList.remove('visible');
         selectedDistrictId = null;
         districtPredictions = {};
+        districtSliders = {}; // Reset sliders cache
         
         // Reset peta
         if (geojsonLayer) {
@@ -237,6 +387,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 layer.setStyle(getDistrictStyle(layer.feature.properties.id_kecamatan));
             });
         }
+        
+        // Close popups
+        map.closePopup();
     });
 
     // Enter di sidebar = prediksi

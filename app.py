@@ -11,8 +11,8 @@ app = Flask(__name__)
 # Konfigurasi database (bisa pindah ke config file nanti)
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'admin',
-    'password': 'admin123',
+    'user': 'root',
+    'password': '',
     'database': 'flood_prediksi'
 }
 
@@ -203,6 +203,35 @@ def get_district_detail(district_id):
     finally:
         conn.close()
 
+# Baseline karakteristik masing-masing wilayah untuk model ML (spesifik dan inheren)
+DISTRICT_CHARACTERISTICS = {
+    1: { # Kota Yogyakarta (Sangat Padat, Urban, Rata, Landlocked)
+        'TopographyDrainage': 4.0, 'Deforestation': 2.0, 'Urbanization': 9.0,
+        'CoastalVulnerability': 1.0, 'Landslides': 1.0, 'PopulationScore': 9.0,
+        'WetlandLoss': 8.0
+    },
+    2: { # Kabupaten Sleman (Lereng Merapi, Pertanian/Suburban, Landlocked)
+        'TopographyDrainage': 6.0, 'Deforestation': 4.0, 'Urbanization': 6.0,
+        'CoastalVulnerability': 1.0, 'Landslides': 5.0, 'PopulationScore': 6.0,
+        'WetlandLoss': 5.0
+    },
+    3: { # Kabupaten Bantul (Muara Sungai, Pesisir, Pertanian)
+        'TopographyDrainage': 3.0, 'Deforestation': 3.0, 'Urbanization': 5.0,
+        'CoastalVulnerability': 6.0, 'Landslides': 3.0, 'PopulationScore': 5.0,
+        'WetlandLoss': 6.0
+    },
+    4: { # Kabupaten Gunung Kidul (Pegunungan Karst, Pesisir, Kepadatan Rendah)
+        'TopographyDrainage': 7.0, 'Deforestation': 5.0, 'Urbanization': 3.0,
+        'CoastalVulnerability': 7.0, 'Landslides': 8.0, 'PopulationScore': 2.0,
+        'WetlandLoss': 3.0
+    },
+    5: { # Kabupaten Kulon Progo (Dataran Rendah & Perbukitan, Bandara YIA, Pesisir)
+        'TopographyDrainage': 5.0, 'Deforestation': 5.0, 'Urbanization': 4.0,
+        'CoastalVulnerability': 6.0, 'Landslides': 5.0, 'PopulationScore': 3.0,
+        'WetlandLoss': 4.0
+    }
+}
+
 @app.route('/predict-district', methods=['POST'])
 def predict_district():
     """Predict flood untuk kabupaten spesifik dan log ke database"""
@@ -213,6 +242,16 @@ def predict_district():
     district_id = data.get('district_id')
     if not district_id:
         return jsonify({'error': 'district_id required'}), 400
+        
+    try:
+        # Gabungkan/timpa parameter spesifik wilayah agar prediksi berbeda per wilayah 
+        # tanpa harus merestart slider di frontend
+        d_id = int(district_id)
+        if d_id in DISTRICT_CHARACTERISTICS:
+            for feat, val in DISTRICT_CHARACTERISTICS[d_id].items():
+                data[feat] = val
+    except Exception as e:
+        print(f"Warning overriding characteristics: {e}")
     
     # Validasi bahwa semua fitur ada di request
     missing_features = [f for f in FEATURE_NAMES if f not in data]
